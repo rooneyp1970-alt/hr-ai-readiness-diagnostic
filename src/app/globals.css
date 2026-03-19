@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0D2238;
+  --shore-navy: #0D2238;
+  --shore-slate: #41576A;
+  --shore-teal: #6DB7AE;
+  --shore-tidefoam: #B7DDD6;
+  --shore-mist: #EEF3F5;
+  --shore-charcoal: #1E2B36;
+  --shore-stone: #D8D2C9;
+  --shore-coral: #D4775B;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-shore-navy: var(--shore-navy);
+  --color-shore-slate: var(--shore-slate);
+  --color-shore-teal: var(--shore-teal);
+  --color-shore-tidefoam: var(--shore-tidefoam);
+  --color-shore-mist: var(--shore-mist);
+  --color-shore-charcoal: var(--shore-charcoal);
+  --color-shore-stone: var(--shore-stone);
+  --color-coral: var(--shore-coral);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), 'Inter', Arial, Helvetica, sans-serif;
+}
+
+@media print {
+  body {
+    background: white;
+    font-size: 12px;
+  }
+}
