@@ -1,0 +1,9 @@
+1:"$Sreact.fragment"
+2:I[55198,["/hr-ai-readiness-diagnostic/_next/static/chunks/23784d82a03b332f.js"],"ClientPageRoot"]
+3:I[43227,["/hr-ai-readiness-diagnostic/_next/static/chunks/f8cb3229e2a2120c.js","/hr-ai-readiness-diagnostic/_next/static/chunks/bc87d56beef37170.js"],"default"]
+6:I[39828,["/hr-ai-readiness-diagnostic/_next/static/chunks/23784d82a03b332f.js"],"OutletBoundary"]
+7:"$Sreact.suspense"
+0:{"buildId":"X1Wh-HM0-OFe-hkSFpcGl","rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/hr-ai-readiness-diagnostic/_next/static/chunks/f8cb3229e2a2120c.js","async":true}],["$","script","script-1",{"src":"/hr-ai-readiness-diagnostic/_next/static/chunks/bc87d56beef37170.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"loading":null,"isPartial":false}
+4:{}
+5:"$0:rsc:props:children:0:props:serverProvidedParams:params"
+8:null

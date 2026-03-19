@@ -1,0 +1,4 @@
+1:"$Sreact.fragment"
+2:I[67284,["/hr-ai-readiness-diagnostic/_next/static/chunks/23784d82a03b332f.js"],"default"]
+3:I[29148,["/hr-ai-readiness-diagnostic/_next/static/chunks/23784d82a03b332f.js"],"default"]
+0:{"buildId":"X1Wh-HM0-OFe-hkSFpcGl","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}

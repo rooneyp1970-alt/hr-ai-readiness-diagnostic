@@ -1,0 +1,5 @@
+1:"$Sreact.fragment"
+2:I[39828,["/hr-ai-readiness-diagnostic/_next/static/chunks/23784d82a03b332f.js"],"ViewportBoundary"]
+3:I[39828,["/hr-ai-readiness-diagnostic/_next/static/chunks/23784d82a03b332f.js"],"MetadataBoundary"]
+4:"$Sreact.suspense"
+0:{"buildId":"X1Wh-HM0-OFe-hkSFpcGl","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Shore GTM — HR AI Readiness and Opportunity Diagnostic"}],["$","meta","1",{"name":"description","content":"A strategic assessment for CHROs, VPs of HR, and HR Operations leaders to evaluate AI readiness across HR functions."}]]}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"loading":null,"isPartial":false}
