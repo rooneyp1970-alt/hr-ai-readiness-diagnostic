@@ -1,11 +1,12 @@
 'use client';
 
-import { AssessmentState, Screen, DraftScore, FinalSnapshot } from '../lib/types';
-import { CANONICAL_QUESTIONS } from '../lib/questions';
-import { getMaturityBand } from '../lib/scoring';
+import { AssessmentState, Screen, DraftScore, FinalSnapshot, Classification } from '../lib/types';
+import { CANONICAL_QUESTIONS, CLASSIFICATION_LABELS } from '../lib/questions';
+import { getMaturityBand, getQuestionCombinedScore } from '../lib/scoring';
 import { generateImplications } from '../lib/implications';
 import ProgressBar from './ProgressBar';
 import RadarChart from './RadarChart';
+import PriorityMatrix from './PriorityMatrix';
 
 interface ResultsScreenProps {
   state: AssessmentState;
@@ -79,6 +80,16 @@ export default function ResultsScreen({
     'HR Operations and Workforce Analytics': 'bg-shore-navy',
   };
 
+  // Classification distribution insights
+  const classificationCounts: Record<Classification, number> = {
+    'hygienic': 0, 'optimization': 0, 'both': 0, 'not-an-issue': 0,
+  };
+  for (const qs of state.questionStates) {
+    if (qs.classification) {
+      classificationCounts[qs.classification]++;
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 z-10 bg-shore-navy border-b border-shore-slate/30 shadow-sm">
@@ -124,6 +135,14 @@ export default function ResultsScreen({
 
         <h1 className="text-2xl font-bold text-shore-navy">Results Dashboard</h1>
 
+        {/* Challenges Context */}
+        {state.challengesText && (
+          <div className="rounded-xl border border-shore-teal/20 bg-shore-tidefoam/20 p-4">
+            <h3 className="text-xs font-semibold text-shore-navy mb-1">Your Key Challenges</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">{state.challengesText}</p>
+          </div>
+        )}
+
         {/* Score Summary Tiles */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <ScoreGauge score={draftScore.overall} label="Overall Readiness" sub={getMaturityBand(draftScore.overall)} />
@@ -138,32 +157,67 @@ export default function ResultsScreen({
           </div>
         </div>
 
-        {/* Radar Chart + Category Bars */}
+        {/* Classification Insights */}
+        {draftScore.answeredCount > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <h2 className="text-sm font-bold text-shore-navy mb-3">Challenge Classification Breakdown</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {(['hygienic', 'optimization', 'both', 'not-an-issue'] as Classification[]).map((c) => {
+                const count = classificationCounts[c];
+                const pct = draftScore.answeredCount > 0 ? Math.round((count / draftScore.answeredCount) * 100) : 0;
+                const colors: Record<string, string> = {
+                  'hygienic': 'border-red-200 bg-red-50',
+                  'optimization': 'border-blue-200 bg-blue-50',
+                  'both': 'border-purple-200 bg-purple-50',
+                  'not-an-issue': 'border-gray-200 bg-gray-50',
+                };
+                return (
+                  <div key={c} className={`rounded-lg border p-3 text-center ${colors[c]}`}>
+                    <p className="text-2xl font-bold text-gray-800">{count}</p>
+                    <p className="text-xs font-medium text-gray-600 mt-0.5">{CLASSIFICATION_LABELS[c]}</p>
+                    <p className="text-[10px] text-gray-400">{pct}% of answered</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Priority Matrix + Radar Chart + Category Bars */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <h2 className="text-sm font-bold text-shore-navy mb-4">Priority Matrix</h2>
+            <PriorityMatrix
+              categoryScores={draftScore.categoryScores}
+              opportunityScores={draftScore.opportunityScores}
+            />
+          </div>
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
             <h2 className="text-sm font-bold text-shore-navy mb-4">Readiness by Function</h2>
             <RadarChart categoryScores={draftScore.categoryScores} size={320} />
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <h2 className="text-sm font-bold text-shore-navy mb-4">Category Scores</h2>
-            <div className="space-y-3">
-              {draftScore.categoryScores.map((cs) => (
-                <div key={cs.category}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-700">{cs.category}</span>
-                    <div className="flex items-center gap-2">
-                      <BandBadge score={cs.normalizedScore} />
-                      <span className="text-xs font-bold text-shore-navy">{cs.normalizedScore}</span>
-                    </div>
+        </div>
+
+        {/* Category Scores */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <h2 className="text-sm font-bold text-shore-navy mb-4">Category Scores</h2>
+          <div className="space-y-3">
+            {draftScore.categoryScores.map((cs) => (
+              <div key={cs.category}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-700">{cs.category}</span>
+                  <div className="flex items-center gap-2">
+                    <BandBadge score={cs.normalizedScore} />
+                    <span className="text-xs font-bold text-shore-navy">{cs.normalizedScore}</span>
                   </div>
-                  <ProgressBar
-                    value={cs.normalizedScore}
-                    size="sm"
-                    color={catBarColors[cs.category] || 'bg-shore-teal'}
-                  />
                 </div>
-              ))}
-            </div>
+                <ProgressBar
+                  value={cs.normalizedScore}
+                  size="sm"
+                  color={catBarColors[cs.category] || 'bg-shore-teal'}
+                />
+              </div>
+            ))}
           </div>
         </div>
 
@@ -203,16 +257,22 @@ export default function ResultsScreen({
         {/* Strengths & Gaps */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="rounded-xl border border-shore-teal/30 bg-white p-4">
-            <h3 className="text-sm font-semibold text-shore-navy mb-2">Top Strengths</h3>
+            <h3 className="text-sm font-semibold text-shore-navy mb-2">Top Priority Areas (Highest Scores)</h3>
             {draftScore.answeredCount === 0 ? (
-              <p className="text-sm text-gray-400">Answer questions to see strengths</p>
+              <p className="text-sm text-gray-400">Answer questions to see priorities</p>
             ) : (
               <ul className="space-y-1.5">
                 {(() => {
                   const answered = CANONICAL_QUESTIONS
-                    .map((q) => ({ ...q, rating: state.questionStates.find((s) => s.questionId === q.id)?.rating }))
-                    .filter((q) => q.rating !== null && q.rating !== undefined)
-                    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+                    .map((q) => {
+                      const qs = state.questionStates.find((s) => s.questionId === q.id);
+                      const score = qs?.classification
+                        ? getQuestionCombinedScore(qs.classification, qs.importance)
+                        : null;
+                      return { ...q, score, classification: qs?.classification };
+                    })
+                    .filter((q) => q.score !== null)
+                    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
                     .slice(0, 5);
                   return answered.map((q) => {
                     const idx = CANONICAL_QUESTIONS.findIndex((c) => c.id === q.id);
@@ -220,7 +280,7 @@ export default function ResultsScreen({
                       <li key={q.id}>
                         <button onClick={() => handleJump(idx)} className="w-full text-left flex items-center justify-between rounded-lg px-2 py-1 hover:bg-gray-50">
                           <span className="text-xs text-gray-700 truncate flex-1">{q.category}: {q.text.slice(0, 60)}...</span>
-                          <span className="text-xs font-semibold text-shore-teal ml-2">{q.rating}/5</span>
+                          <span className="text-xs font-semibold text-red-600 ml-2">{q.score?.toFixed(1)}</span>
                         </button>
                       </li>
                     );
@@ -229,29 +289,37 @@ export default function ResultsScreen({
               </ul>
             )}
           </div>
-          <div className="rounded-xl border border-coral/30 bg-white p-4">
-            <h3 className="text-sm font-semibold text-shore-navy mb-2">Top Gaps</h3>
+          <div className="rounded-xl border border-shore-teal/30 bg-white p-4">
+            <h3 className="text-sm font-semibold text-shore-navy mb-2">Areas of Strength (Low Concern)</h3>
             {draftScore.answeredCount === 0 ? (
-              <p className="text-sm text-gray-400">Answer questions to see gaps</p>
+              <p className="text-sm text-gray-400">Answer questions to see strengths</p>
             ) : (
               <ul className="space-y-1.5">
                 {(() => {
                   const answered = CANONICAL_QUESTIONS
-                    .map((q) => ({ ...q, rating: state.questionStates.find((s) => s.questionId === q.id)?.rating }))
-                    .filter((q) => q.rating !== null && q.rating !== undefined)
-                    .sort((a, b) => (a.rating ?? 5) - (b.rating ?? 5))
+                    .map((q) => {
+                      const qs = state.questionStates.find((s) => s.questionId === q.id);
+                      const score = qs?.classification
+                        ? getQuestionCombinedScore(qs.classification, qs.importance)
+                        : null;
+                      return { ...q, score, classification: qs?.classification };
+                    })
+                    .filter((q) => q.score !== null && q.classification === 'not-an-issue' || (q.score !== null && q.score! <= 1))
+                    .sort((a, b) => (a.score ?? 5) - (b.score ?? 5))
                     .slice(0, 5);
-                  return answered.map((q) => {
+                  return answered.length > 0 ? answered.map((q) => {
                     const idx = CANONICAL_QUESTIONS.findIndex((c) => c.id === q.id);
                     return (
                       <li key={q.id}>
                         <button onClick={() => handleJump(idx)} className="w-full text-left flex items-center justify-between rounded-lg px-2 py-1 hover:bg-gray-50">
                           <span className="text-xs text-gray-700 truncate flex-1">{q.category}: {q.text.slice(0, 60)}...</span>
-                          <span className="text-xs font-semibold text-red-600 ml-2">{q.rating}/5</span>
+                          <span className="text-xs font-semibold text-shore-teal ml-2">
+                            {q.classification === 'not-an-issue' ? 'N/A' : q.score?.toFixed(1)}
+                          </span>
                         </button>
                       </li>
                     );
-                  });
+                  }) : <li className="text-sm text-gray-400">No low-concern areas yet</li>;
                 })()}
               </ul>
             )}
@@ -289,7 +357,7 @@ export default function ResultsScreen({
               <ScoreGauge score={finalSnapshot.riskOfInaction.overall} label="Risk of Inaction" />
               <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
                 <p className="text-3xl font-bold text-shore-navy">{finalSnapshot.strengths.length}</p>
-                <p className="text-xs text-gray-600 mt-1">Top Strengths</p>
+                <p className="text-xs text-gray-600 mt-1">Top Priorities</p>
               </div>
             </div>
           </div>

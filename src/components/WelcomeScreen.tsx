@@ -66,11 +66,11 @@ export default function WelcomeScreen({
             <Logo size="lg" />
           </div>
           <h1 className="text-3xl font-bold text-shore-navy mb-2">
-            HR AI Readiness and Opportunity Diagnostic
+            Where are you most likely to benefit from using AI?
           </h1>
           <p className="text-shore-slate text-sm leading-relaxed max-w-md mx-auto">
-            A strategic assessment for CHROs, VPs of HR, and HR Operations leaders.
-            Evaluate organizational AI readiness across HR functions, identify opportunities,
+            A strategic diagnostic for CHROs, VPs of HR, and HR Operations leaders.
+            Identify AI readiness gaps, prioritize opportunities by function,
             and receive a tailored roadmap.
           </p>
         </div>

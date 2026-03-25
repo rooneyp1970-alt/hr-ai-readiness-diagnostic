@@ -1,5 +1,6 @@
 import { AssessmentState, Category, DraftScore, MaturityBand } from './types';
-import { CANONICAL_QUESTIONS, CATEGORIES, CATEGORY_DESCRIPTIONS, AI_OPPORTUNITY_AREAS, RATING_LABELS } from './questions';
+import { CANONICAL_QUESTIONS, CATEGORIES, CATEGORY_DESCRIPTIONS, AI_OPPORTUNITY_AREAS, CLASSIFICATION_LABELS } from './questions';
+import { getQuestionCombinedScore } from './scoring';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -53,12 +54,17 @@ function getCategoryStrengths(category: Category, state: AssessmentState): strin
 
   for (const q of questions) {
     const qs = state.questionStates.find((s) => s.questionId === q.id);
-    if (qs?.rating && qs.rating >= 4) {
-      strengths.push(`${q.text.replace(/^How /, '').replace(/\?$/, '')} (${qs.rating}/5 — ${RATING_LABELS[qs.rating]})`);
+    if (qs?.classification === 'not-an-issue') {
+      strengths.push(`${q.text.replace(/^How /, '').replace(/\?$/, '')} (Not an issue)`);
+    } else if (qs?.classification && qs.importance !== null && qs.importance !== undefined) {
+      const score = getQuestionCombinedScore(qs.classification, qs.importance);
+      if (score <= 1) {
+        strengths.push(`${q.text.replace(/^How /, '').replace(/\?$/, '')} (${CLASSIFICATION_LABELS[qs.classification]}, Importance: ${qs.importance})`);
+      }
     }
   }
 
-  return strengths.length > 0 ? strengths : ['No areas rated at Established or above'];
+  return strengths.length > 0 ? strengths : ['No areas identified as low concern'];
 }
 
 function getCategoryBarriers(category: Category, state: AssessmentState): string[] {
@@ -67,8 +73,11 @@ function getCategoryBarriers(category: Category, state: AssessmentState): string
 
   for (const q of questions) {
     const qs = state.questionStates.find((s) => s.questionId === q.id);
-    if (qs?.rating && qs.rating <= 2) {
-      barriers.push(`${q.text.replace(/^How /, '').replace(/\?$/, '')} (${qs.rating}/5 — ${RATING_LABELS[qs.rating]})`);
+    if (qs?.classification && qs.classification !== 'not-an-issue' && qs.importance !== null && qs.importance !== undefined) {
+      const score = getQuestionCombinedScore(qs.classification, qs.importance);
+      if (score >= 3) {
+        barriers.push(`${q.text.replace(/^How /, '').replace(/\?$/, '')} (${CLASSIFICATION_LABELS[qs.classification]}, Importance: ${qs.importance})`);
+      }
     }
   }
 
@@ -143,7 +152,7 @@ function getCategoryNextSteps(category: Category, score: number, band: MaturityB
 
 // ─── Executive Summary ──────────────────────────────────────────────────────
 
-function generateExecutiveSummary(draftScore: DraftScore): string {
+function generateExecutiveSummary(draftScore: DraftScore, challengesText?: string): string {
   const { overall, categoryScores, riskOfInaction, answeredCount, totalCount } = draftScore;
 
   const completionNote = answeredCount < totalCount
@@ -177,6 +186,10 @@ function generateExecutiveSummary(draftScore: DraftScore): string {
   }
   if (topOpp.length > 0) {
     assessment += ` The greatest AI value creation opportunity exists in ${topOpp.join(' and ')}.`;
+  }
+
+  if (challengesText && challengesText.trim().length > 0) {
+    assessment += ` The leader identified these key challenges: "${challengesText.trim().slice(0, 200)}${challengesText.trim().length > 200 ? '...' : ''}" — the results below should be viewed through the lens of addressing these priorities.`;
   }
 
   return assessment;
@@ -342,7 +355,7 @@ export function generateImplications(
   state: AssessmentState,
   draftScore: DraftScore
 ): ImplicationsResult {
-  const executiveSummary = generateExecutiveSummary(draftScore);
+  const executiveSummary = generateExecutiveSummary(draftScore, state.challengesText);
 
   const categoryImplications: CategoryImplication[] = CATEGORIES.map((cat) => {
     const cs = draftScore.categoryScores.find((c) => c.category === cat)!;

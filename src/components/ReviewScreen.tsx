@@ -1,7 +1,8 @@
 'use client';
 
 import { AssessmentState, Screen } from '../lib/types';
-import { CANONICAL_QUESTIONS, CATEGORIES, RATING_LABELS } from '../lib/questions';
+import { CANONICAL_QUESTIONS, CATEGORIES, CLASSIFICATION_LABELS, IMPORTANCE_LABELS } from '../lib/questions';
+import { getQuestionCombinedScore } from '../lib/scoring';
 
 interface ReviewScreenProps {
   state: AssessmentState;
@@ -66,8 +67,13 @@ export default function ReviewScreen({
                 {questions.map((q) => {
                   const globalIdx = CANONICAL_QUESTIONS.indexOf(q);
                   const qs = state.questionStates.find((s) => s.questionId === q.id);
-                  const rating = qs?.rating;
+                  const classification = qs?.classification;
+                  const importance = qs?.importance;
                   const hasNotes = qs?.notes && qs.notes.length > 0;
+                  const isAnswered = classification !== null && classification !== undefined;
+                  const combined = isAnswered
+                    ? getQuestionCombinedScore(classification!, importance ?? null)
+                    : null;
 
                   return (
                     <button
@@ -76,21 +82,26 @@ export default function ReviewScreen({
                       className="w-full text-left flex items-center gap-3 rounded-lg px-3 py-2.5 bg-white border border-gray-100 hover:border-shore-teal/30 hover:bg-shore-mist/20 transition-colors"
                     >
                       <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                        rating
-                          ? rating >= 4
-                            ? 'bg-shore-teal/15 text-shore-teal'
-                            : rating >= 3
+                        isAnswered
+                          ? combined !== null && combined >= 3
+                            ? 'bg-red-50 text-red-600'
+                            : combined !== null && combined >= 1.5
                               ? 'bg-amber-50 text-amber-700'
-                              : 'bg-red-50 text-red-600'
+                              : classification === 'not-an-issue'
+                                ? 'bg-gray-100 text-gray-400'
+                                : 'bg-shore-teal/15 text-shore-teal'
                           : 'bg-gray-100 text-gray-400'
                       }`}>
-                        {rating ?? '—'}
+                        {combined !== null ? combined.toFixed(1) : '—'}
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-700 truncate">{q.text}</p>
                         <div className="flex items-center gap-2">
-                          {rating ? (
-                            <span className="text-xs text-shore-slate">{RATING_LABELS[rating]}</span>
+                          {isAnswered ? (
+                            <span className="text-xs text-shore-slate">
+                              {CLASSIFICATION_LABELS[classification!]}
+                              {classification !== 'not-an-issue' && importance ? ` · Importance: ${importance}` : ''}
+                            </span>
                           ) : (
                             <span className="text-xs text-gray-400">Not answered</span>
                           )}

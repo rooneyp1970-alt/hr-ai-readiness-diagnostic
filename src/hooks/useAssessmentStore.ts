@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { AssessmentState, Screen, WeightsConfig } from '../lib/types';
+import { AssessmentState, Classification, Screen, WeightsConfig, SEVERITY_MAP } from '../lib/types';
 import { loadState, saveState, clearState } from '../lib/storage';
 import { createInitialState, computeDraftScore, computeFinalSnapshot } from '../lib/scoring';
 
@@ -48,7 +48,7 @@ export function useAssessmentStore() {
     setState(fresh);
     saveState(fresh);
     setCurrentQuestionIndex(0);
-    setScreen('wizard');
+    setScreen('challenges');
   }, []);
 
   const resumeAssessment = useCallback(() => {
@@ -68,12 +68,31 @@ export function useAssessmentStore() {
     setScreen('welcome');
   }, []);
 
-  const setRating = useCallback(
-    (questionId: string, rating: number | null) => {
+  const setChallengesText = useCallback(
+    (text: string) => {
+      updateState((prev) => ({
+        ...prev,
+        challengesText: text,
+      }));
+    },
+    [updateState]
+  );
+
+  const setClassification = useCallback(
+    (questionId: string, classification: Classification | null) => {
       updateState((prev) => {
         const questionStates = prev.questionStates.map((qs) => {
           if (qs.questionId !== questionId) return qs;
-          return { ...qs, rating };
+          const newImportance = classification === 'not-an-issue' ? 0 : qs.importance;
+          const combined = classification
+            ? SEVERITY_MAP[classification] * (newImportance ?? 0)
+            : null;
+          return {
+            ...qs,
+            classification,
+            importance: newImportance,
+            rating: combined !== null ? Math.round(combined * 10) / 10 : null,
+          };
         });
         return {
           ...prev,
@@ -83,6 +102,38 @@ export function useAssessmentStore() {
       });
     },
     [updateState]
+  );
+
+  const setImportance = useCallback(
+    (questionId: string, importance: number | null) => {
+      updateState((prev) => {
+        const questionStates = prev.questionStates.map((qs) => {
+          if (qs.questionId !== questionId) return qs;
+          const combined = qs.classification
+            ? SEVERITY_MAP[qs.classification] * (importance ?? 0)
+            : null;
+          return {
+            ...qs,
+            importance,
+            rating: combined !== null ? Math.round(combined * 10) / 10 : null,
+          };
+        });
+        return {
+          ...prev,
+          questionStates,
+          dirtyAfterFinal: prev.finalSnapshot !== null ? true : prev.dirtyAfterFinal,
+        };
+      });
+    },
+    [updateState]
+  );
+
+  // Legacy compat: setRating sets importance directly (for any remaining callers)
+  const setRating = useCallback(
+    (questionId: string, rating: number | null) => {
+      setImportance(questionId, rating);
+    },
+    [setImportance]
   );
 
   const setNotes = useCallback(
@@ -144,6 +195,9 @@ export function useAssessmentStore() {
     resumeAssessment,
     importAssessment,
     resetAssessment,
+    setChallengesText,
+    setClassification,
+    setImportance,
     setRating,
     setNotes,
     calculateFinalScore,

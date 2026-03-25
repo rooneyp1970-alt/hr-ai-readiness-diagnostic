@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useAssessmentStore } from '../hooks/useAssessmentStore';
 import WelcomeScreen from '../components/WelcomeScreen';
+import ChallengesScreen from '../components/ChallengesScreen';
+import SplashScreen from '../components/SplashScreen';
 import WizardScreen from '../components/WizardScreen';
 import ReviewScreen from '../components/ReviewScreen';
 import ResultsScreen from '../components/ResultsScreen';
@@ -34,7 +36,7 @@ function DiagnosticApp() {
   }
 
   // Last saved indicator
-  const lastSavedIndicator = store.lastSaved && store.screen !== 'welcome' && (
+  const lastSavedIndicator = store.lastSaved && store.screen !== 'welcome' && store.screen !== 'challenges' && store.screen !== 'splash' && (
     <div className="fixed bottom-4 right-4 z-20 print:hidden">
       <div className="rounded-lg bg-white border border-gray-200 shadow-sm px-3 py-1.5 text-xs text-gray-400">
         Last saved: {new Date(store.lastSaved).toLocaleTimeString()}
@@ -56,6 +58,20 @@ function DiagnosticApp() {
         />
       );
 
+    case 'challenges':
+      return (
+        <ChallengesScreen
+          challengesText={store.state?.challengesText ?? ''}
+          onSetChallengesText={store.setChallengesText}
+          onNavigate={store.setScreen}
+        />
+      );
+
+    case 'splash':
+      return (
+        <SplashScreen onNavigate={store.setScreen} />
+      );
+
     case 'wizard':
       if (!store.state || !store.draftScore) return null;
       return (
@@ -64,7 +80,8 @@ function DiagnosticApp() {
             state={store.state}
             currentIndex={store.currentQuestionIndex}
             onSetIndex={store.setCurrentQuestionIndex}
-            onSetRating={store.setRating}
+            onSetClassification={store.setClassification}
+            onSetImportance={store.setImportance}
             onSetNotes={store.setNotes}
             onNavigate={store.setScreen}
             draftOverall={store.draftScore.overall}

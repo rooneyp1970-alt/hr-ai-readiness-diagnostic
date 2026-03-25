@@ -31,7 +31,7 @@ export default function Stepper({ currentIndex, state, onJump }: StepperProps) {
         const isCurrent = currentQuestion.category === cat;
         const answeredCount = questions.filter((q) => {
           const qs = state.questionStates.find((s) => s.questionId === q.id);
-          return qs?.rating !== null && qs?.rating !== undefined;
+          return qs?.classification !== null && qs?.classification !== undefined;
         }).length;
         const allAnswered = answeredCount === questions.length;
 

@@ -1,8 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { AssessmentState, DraftScore } from './types';
-import { CANONICAL_QUESTIONS, CATEGORIES, RATING_LABELS, CATEGORY_DESCRIPTIONS } from './questions';
-import { getMaturityBand } from './scoring';
+import { CANONICAL_QUESTIONS, CATEGORIES, CLASSIFICATION_LABELS, CATEGORY_DESCRIPTIONS } from './questions';
+import { getMaturityBand, getQuestionCombinedScore } from './scoring';
 import { generateImplications } from './implications';
 
 // Shore GTM brand colors (from Brand Guidelines)
@@ -92,6 +92,23 @@ export function generatePDF(state: AssessmentState, draftScore: DraftScore): voi
   doc.setTextColor(...SLATE);
   doc.text('Executive Assessment Report', pageW / 2, y + 11, { align: 'center' });
   y += 20;
+
+  // ─── Key Challenges ──────────────────────────────────────────────
+  if (state.challengesText && state.challengesText.trim().length > 0) {
+    doc.setFillColor(...TEAL);
+    doc.roundedRect(margin, y, contentW, 7, 2, 2, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Key Challenges Identified', margin + 4, y + 5);
+    y += 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...CHARCOAL);
+    const challengeLines = doc.splitTextToSize(state.challengesText.trim(), contentW);
+    doc.text(challengeLines, margin, y);
+    y += challengeLines.length * 3.5 + 6;
+  }
 
   // ─── Score Summary ────────────────────────────────────────────────
   const overall = state.finalSnapshot?.overallScore ?? draftScore.overall;

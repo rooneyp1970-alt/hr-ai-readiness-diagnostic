@@ -10,6 +10,8 @@ export type Category =
   | 'Employee Relations and Compliance'
   | 'HR Operations and Workforce Analytics';
 
+export type Classification = 'hygienic' | 'optimization' | 'both' | 'not-an-issue';
+
 export interface CanonicalQuestion {
   id: string;
   category: Category;
@@ -20,8 +22,11 @@ export interface CanonicalQuestion {
 
 export interface QuestionState {
   questionId: string;
-  rating: number | null; // 1–5 or null if unanswered
+  classification: Classification | null;
+  importance: number | null; // 1–5 or null; auto-zeroed when classification is 'not-an-issue'
   notes: string;
+  // Derived convenience field (severity × importance), kept in sync by scoring
+  rating: number | null; // legacy compat: derived combined score 0–5
 }
 
 export interface CategoryWeight {
@@ -36,7 +41,7 @@ export interface WeightsConfig {
 
 export interface CategoryScore {
   category: Category;
-  rawScore: number; // 5–25
+  rawScore: number;
   normalizedScore: number; // 0–100
   answeredCount: number;
   totalCount: number;
@@ -66,14 +71,15 @@ export interface FinalSnapshot {
   categoryScores: CategoryScore[];
   opportunityScores: OpportunityScore[];
   riskOfInaction: RiskOfInaction;
-  strengths: { questionId: string; text: string; rating: number; category: Category }[];
-  gaps: { questionId: string; text: string; rating: number; category: Category }[];
+  strengths: { questionId: string; text: string; score: number; category: Category }[];
+  gaps: { questionId: string; text: string; score: number; category: Category }[];
 }
 
 export interface AssessmentState {
   version: number;
   createdAt: string;
   lastSavedAt: string;
+  challengesText: string;
   questionStates: QuestionState[];
   weightsConfig: WeightsConfig;
   finalSnapshot: FinalSnapshot | null;
@@ -89,4 +95,13 @@ export interface DraftScore {
   totalCount: number;
 }
 
-export type Screen = 'welcome' | 'wizard' | 'review' | 'results' | 'export' | 'settings';
+export type Screen = 'welcome' | 'challenges' | 'splash' | 'wizard' | 'review' | 'results' | 'export' | 'settings';
+
+// ─── Severity Mapping ──────────────────────────────────────────────────────
+
+export const SEVERITY_MAP: Record<Classification, number> = {
+  'not-an-issue': 0,
+  'optimization': 0.5,
+  'hygienic': 0.8,
+  'both': 1.0,
+};

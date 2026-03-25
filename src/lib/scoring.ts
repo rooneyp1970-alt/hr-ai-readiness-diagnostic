@@ -2,13 +2,27 @@ import {
   AssessmentState,
   Category,
   CategoryScore,
+  Classification,
   DraftScore,
   FinalSnapshot,
   MaturityBand,
   OpportunityScore,
   RiskOfInaction,
+  SEVERITY_MAP,
 } from './types';
 import { CANONICAL_QUESTIONS, CATEGORIES, getQuestionsByCategory } from './questions';
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+export function getQuestionCombinedScore(
+  classification: Classification | null,
+  importance: number | null
+): number {
+  if (!classification || classification === 'not-an-issue') return 0;
+  const severity = SEVERITY_MAP[classification];
+  const imp = importance ?? 0;
+  return severity * imp; // 0–5 range
+}
 
 // ─── Maturity Band ──────────────────────────────────────────────────────────
 
@@ -23,32 +37,28 @@ export function getMaturityBand(score: number): MaturityBand {
 
 function computeCategoryScore(category: Category, state: AssessmentState): CategoryScore {
   const questions = getQuestionsByCategory(category);
-  const answered: number[] = [];
+  const scores: number[] = [];
 
   for (const q of questions) {
     const qs = state.questionStates.find((s) => s.questionId === q.id);
-    if (qs?.rating !== null && qs?.rating !== undefined) {
-      answered.push(qs.rating);
+    if (qs?.classification !== null && qs?.classification !== undefined) {
+      scores.push(getQuestionCombinedScore(qs.classification, qs.importance));
     }
   }
 
-  const rawScore = answered.reduce((sum, r) => sum + r, 0);
-  // Category score: ((raw - 5) / 20) * 100, but only over answered questions
-  // If not all answered, scale proportionally
+  const rawScore = scores.reduce((sum, s) => sum + s, 0);
+  // Normalize: max possible per answered question is 5 (severity 1.0 × importance 5)
   let normalizedScore = 0;
-  if (answered.length > 0) {
-    const maxPossible = answered.length * 5;
-    const minPossible = answered.length * 1;
-    if (maxPossible > minPossible) {
-      normalizedScore = Math.round(((rawScore - minPossible) / (maxPossible - minPossible)) * 100);
-    }
+  if (scores.length > 0) {
+    const maxPossible = scores.length * 5;
+    normalizedScore = Math.round((rawScore / maxPossible) * 100);
   }
 
   return {
     category,
-    rawScore,
+    rawScore: Math.round(rawScore * 100) / 100,
     normalizedScore,
-    answeredCount: answered.length,
+    answeredCount: scores.length,
     totalCount: questions.length,
     maturityBand: getMaturityBand(normalizedScore),
   };
@@ -60,14 +70,10 @@ function computeOverallScore(categoryScores: CategoryScore[], state: AssessmentS
   const { weightsConfig } = state;
 
   if (weightsConfig.mode === 'equal') {
-    // Simple: total raw across all answered, then normalize
-    const totalRaw = categoryScores.reduce((sum, cs) => sum + cs.rawScore, 0);
-    const totalAnswered = categoryScores.reduce((sum, cs) => sum + cs.answeredCount, 0);
-    if (totalAnswered === 0) return 0;
-    const maxPossible = totalAnswered * 5;
-    const minPossible = totalAnswered * 1;
-    if (maxPossible <= minPossible) return 0;
-    return Math.round(1 + ((totalRaw - minPossible) / (maxPossible - minPossible)) * 99);
+    const totalNorm = categoryScores.reduce((sum, cs) => sum + cs.normalizedScore, 0);
+    const answered = categoryScores.filter((cs) => cs.answeredCount > 0).length;
+    if (answered === 0) return 0;
+    return Math.round(totalNorm / answered);
   }
 
   // Custom weighted mode
@@ -88,9 +94,6 @@ function computeOverallScore(categoryScores: CategoryScore[], state: AssessmentS
 
 // ─── AI Opportunity Scoring ─────────────────────────────────────────────────
 
-// Derived algorithmically from readiness answers
-// Higher opportunity = lower readiness + inherent function characteristics
-
 const INHERENT_OPPORTUNITY: Record<Category, { volume: number; repetitiveness: number; valuePotential: number; feasibility: number }> = {
   'Talent Acquisition':                      { volume: 85, repetitiveness: 75, valuePotential: 90, feasibility: 80 },
   'Onboarding':                              { volume: 70, repetitiveness: 80, valuePotential: 75, feasibility: 85 },
@@ -106,27 +109,19 @@ function computeOpportunityScore(category: Category, categoryScore: CategoryScor
   const inherent = INHERENT_OPPORTUNITY[category];
   const readiness = categoryScore.normalizedScore;
 
-  // Pain level is inversely related to readiness
   const painLevel = Math.max(0, 100 - readiness);
-
-  // Value creation: combine inherent value potential with pain level
   const valueCreation = Math.round((inherent.valuePotential * 0.6 + painLevel * 0.4));
-
-  // Implementation complexity: higher readiness = lower complexity, tempered by inherent feasibility
   const complexity = Math.round(100 - (readiness * 0.4 + inherent.feasibility * 0.6));
 
-  // Risk level: for sensitive functions, higher base risk
   const sensitivityBonus = ['Employee Relations and Compliance', 'Payroll', 'Performance Management'].includes(category) ? 15 : 0;
   const riskLevel = Math.min(100, Math.round(complexity * 0.5 + sensitivityBonus + (100 - readiness) * 0.3));
 
-  // Recommended pace
   let recommendedPace = 'Accelerate';
   if (readiness < 25) recommendedPace = 'Build foundations first';
   else if (readiness < 50) recommendedPace = 'Prepare, then pilot';
   else if (readiness < 75) recommendedPace = 'Pilot and scale';
   else recommendedPace = 'Scale and optimize';
 
-  // Overall opportunity: weighted combination
   const overallOpportunity = Math.round(
     valueCreation * 0.35 +
     (inherent.volume * 0.15) +
@@ -153,7 +148,6 @@ function computeRiskOfInaction(categoryScores: CategoryScore[]): RiskOfInaction 
     ? categoryScores.reduce((sum, cs) => sum + cs.normalizedScore, 0) / categoryScores.length
     : 50;
 
-  // Specific risk factors derived from category scores
   const taScore = categoryScores.find((c) => c.category === 'Talent Acquisition')?.normalizedScore ?? 50;
   const onbScore = categoryScores.find((c) => c.category === 'Onboarding')?.normalizedScore ?? 50;
   const payScore = categoryScores.find((c) => c.category === 'Payroll')?.normalizedScore ?? 50;
@@ -206,25 +200,28 @@ export function computeFinalSnapshot(state: AssessmentState): FinalSnapshot {
   const answeredQs = CANONICAL_QUESTIONS
     .map((q) => {
       const qs = state.questionStates.find((s) => s.questionId === q.id);
-      return { ...q, rating: qs?.rating ?? null };
+      const score = qs?.classification
+        ? getQuestionCombinedScore(qs.classification, qs.importance)
+        : null;
+      return { ...q, score };
     })
-    .filter((q) => q.rating !== null) as (typeof CANONICAL_QUESTIONS[number] & { rating: number })[];
+    .filter((q) => q.score !== null) as (typeof CANONICAL_QUESTIONS[number] & { score: number })[];
 
-  const sorted = [...answeredQs].sort((a, b) => b.rating - a.rating);
+  const sorted = [...answeredQs].sort((a, b) => b.score - a.score);
   const strengths = sorted.slice(0, 5).map((s) => ({
     questionId: s.id,
     text: s.text,
-    rating: s.rating,
+    score: s.score,
     category: s.category,
   }));
 
   const gaps = [...answeredQs]
-    .sort((a, b) => a.rating - b.rating)
+    .sort((a, b) => a.score - b.score)
     .slice(0, 5)
     .map((s) => ({
       questionId: s.id,
       text: s.text,
-      rating: s.rating,
+      score: s.score,
       category: s.category,
     }));
 
@@ -244,13 +241,16 @@ export function computeFinalSnapshot(state: AssessmentState): FinalSnapshot {
 export function createInitialState(): AssessmentState {
   const now = new Date().toISOString();
   return {
-    version: 1,
+    version: 2,
     createdAt: now,
     lastSavedAt: now,
+    challengesText: '',
     questionStates: CANONICAL_QUESTIONS.map((q) => ({
       questionId: q.id,
-      rating: null,
+      classification: null,
+      importance: null,
       notes: '',
+      rating: null,
     })),
     weightsConfig: {
       mode: 'equal',
@@ -265,14 +265,17 @@ export function createInitialState(): AssessmentState {
 
 export function generateCSV(state: AssessmentState): string {
   const lines: string[] = [];
-  lines.push('Category,Question,Theme,Rating,Level,Notes');
+  lines.push('Category,Question,Theme,Classification,Importance,Combined Score,Notes');
 
   for (const q of CANONICAL_QUESTIONS) {
     const qs = state.questionStates.find((s) => s.questionId === q.id);
-    const rating = qs?.rating ?? '';
-    const level = qs?.rating ? (['', 'Not in place', 'Minimal / ad hoc', 'Developing', 'Established', 'Advanced / scalable'][qs.rating] ?? '') : '';
+    const classification = qs?.classification ?? '';
+    const importance = qs?.importance ?? '';
+    const combined = qs?.classification
+      ? getQuestionCombinedScore(qs.classification, qs.importance).toFixed(2)
+      : '';
     const notes = csvEscape(qs?.notes ?? '');
-    lines.push(`${csvEscape(q.category)},${csvEscape(q.text)},${q.theme},${rating},${csvEscape(level)},${notes}`);
+    lines.push(`${csvEscape(q.category)},${csvEscape(q.text)},${q.theme},${classification},${importance},${combined},${notes}`);
   }
 
   return lines.join('\n');

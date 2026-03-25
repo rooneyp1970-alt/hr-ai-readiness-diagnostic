@@ -3,7 +3,7 @@
 import { AssessmentState, Screen, DraftScore } from '../lib/types';
 import { exportStateJSON } from '../lib/storage';
 import { generateCSV } from '../lib/scoring';
-import { CANONICAL_QUESTIONS, CATEGORIES, RATING_LABELS, CATEGORY_DESCRIPTIONS } from '../lib/questions';
+import { CANONICAL_QUESTIONS, CATEGORIES, CATEGORY_DESCRIPTIONS } from '../lib/questions';
 import { getMaturityBand } from '../lib/scoring';
 import { generatePDF } from '../lib/pdfExport';
 import { generateImplications } from '../lib/implications';

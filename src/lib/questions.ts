@@ -1,4 +1,4 @@
-import { CanonicalQuestion, Category } from './types';
+import { CanonicalQuestion, Category, Classification } from './types';
 
 interface QuestionDef {
   text: string;
@@ -273,4 +273,28 @@ export const RATING_DESCRIPTIONS: Record<number, string> = {
   3: 'A defined process is in place but not consistently followed or measured across the organization.',
   4: 'The capability is well established, consistently executed, and supported by clear ownership and measurement.',
   5: 'The capability is mature, scalable, continuously improved, and ready for AI-enhanced operation.',
+};
+
+// ─── Classification Labels ─────────────────────────────────────────────────
+
+export const CLASSIFICATION_LABELS: Record<Classification, string> = {
+  'hygienic': 'Hygienic',
+  'optimization': 'Optimization',
+  'both': 'Both',
+  'not-an-issue': 'Not an Issue',
+};
+
+export const CLASSIFICATION_DESCRIPTIONS: Record<Classification, string> = {
+  'hygienic': 'This is a foundational requirement — a gap here creates real risk, compliance exposure, or operational failure.',
+  'optimization': 'This is an efficiency or quality opportunity — improving here would create value but the current state is manageable.',
+  'both': 'This is both a foundational gap and an optimization opportunity.',
+  'not-an-issue': 'This area is already well handled or not relevant to your organization.',
+};
+
+export const IMPORTANCE_LABELS: Record<number, string> = {
+  1: 'Low priority',
+  2: 'Somewhat important',
+  3: 'Moderately important',
+  4: 'High priority',
+  5: 'Critical / urgent',
 };
