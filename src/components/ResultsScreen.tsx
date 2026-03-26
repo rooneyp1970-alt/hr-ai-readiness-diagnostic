@@ -82,7 +82,7 @@ export default function ResultsScreen({
 
   // Classification distribution insights
   const classificationCounts: Record<Classification, number> = {
-    'hygienic': 0, 'optimization': 0, 'both': 0, 'not-an-issue': 0,
+    'critical-gap': 0, 'needs-work': 0, 'room-to-improve': 0, 'in-good-shape': 0,
   };
   for (const qs of state.questionStates) {
     if (qs.classification) {
@@ -160,16 +160,16 @@ export default function ResultsScreen({
         {/* Classification Insights */}
         {draftScore.answeredCount > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
-            <h2 className="text-sm font-bold text-shore-navy mb-3">Challenge Classification Breakdown</h2>
+            <h2 className="text-sm font-bold text-shore-navy mb-3">Preparedness Breakdown</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {(['hygienic', 'optimization', 'both', 'not-an-issue'] as Classification[]).map((c) => {
+              {(['critical-gap', 'needs-work', 'room-to-improve', 'in-good-shape'] as Classification[]).map((c) => {
                 const count = classificationCounts[c];
                 const pct = draftScore.answeredCount > 0 ? Math.round((count / draftScore.answeredCount) * 100) : 0;
                 const colors: Record<string, string> = {
-                  'hygienic': 'border-red-200 bg-red-50',
-                  'optimization': 'border-blue-200 bg-blue-50',
-                  'both': 'border-purple-200 bg-purple-50',
-                  'not-an-issue': 'border-gray-200 bg-gray-50',
+                  'critical-gap': 'border-red-200 bg-red-50',
+                  'needs-work': 'border-amber-200 bg-amber-50',
+                  'room-to-improve': 'border-blue-200 bg-blue-50',
+                  'in-good-shape': 'border-emerald-200 bg-emerald-50',
                 };
                 return (
                   <div key={c} className={`rounded-lg border p-3 text-center ${colors[c]}`}>
@@ -304,7 +304,7 @@ export default function ResultsScreen({
                         : null;
                       return { ...q, score, classification: qs?.classification };
                     })
-                    .filter((q) => q.score !== null && q.classification === 'not-an-issue' || (q.score !== null && q.score! <= 1))
+                    .filter((q) => q.score !== null && q.classification === 'in-good-shape' || (q.score !== null && q.score! <= 1))
                     .sort((a, b) => (a.score ?? 5) - (b.score ?? 5))
                     .slice(0, 5);
                   return answered.length > 0 ? answered.map((q) => {
@@ -314,7 +314,7 @@ export default function ResultsScreen({
                         <button onClick={() => handleJump(idx)} className="w-full text-left flex items-center justify-between rounded-lg px-2 py-1 hover:bg-gray-50">
                           <span className="text-xs text-gray-700 truncate flex-1">{q.category}: {q.text.slice(0, 60)}...</span>
                           <span className="text-xs font-semibold text-shore-teal ml-2">
-                            {q.classification === 'not-an-issue' ? 'N/A' : q.score?.toFixed(1)}
+                            {q.classification === 'in-good-shape' ? 'N/A' : q.score?.toFixed(1)}
                           </span>
                         </button>
                       </li>

@@ -34,7 +34,7 @@ export default function SplashScreen({ onNavigate }: SplashScreenProps) {
 
           <div className="border-t border-gray-100 pt-5">
             <p className="text-xs text-shore-slate mb-4">
-              For each question, you&apos;ll classify the type of challenge and rate its importance.
+              For each question, you&apos;ll assess your organization&apos;s current preparedness and rate its importance.
               There are 40 questions across 8 HR functions. Most people finish in 15-20 minutes.
             </p>
             <button

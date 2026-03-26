@@ -2,9 +2,18 @@ import { AssessmentState, QuestionState } from './types';
 import { createInitialState } from './scoring';
 
 const STORAGE_KEY = 'hr-ai-readiness-state';
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 
-// ─── V1 → V2 Migration ──────────────────────────────────────────────────────
+// ─── Classification value mapping (v2 → v3) ────────────────────────────────
+
+const V2_TO_V3_CLASSIFICATION: Record<string, string> = {
+  'hygienic': 'critical-gap',
+  'both': 'needs-work',
+  'optimization': 'room-to-improve',
+  'not-an-issue': 'in-good-shape',
+};
+
+// ─── V1 → V3 Migration ──────────────────────────────────────────────────────
 
 interface V1QuestionState {
   questionId: string;
@@ -12,7 +21,7 @@ interface V1QuestionState {
   notes: string;
 }
 
-function migrateV1toV2(raw: Record<string, unknown>): AssessmentState {
+function migrateV1(raw: Record<string, unknown>): AssessmentState {
   const v1States = (raw.questionStates as V1QuestionState[]) ?? [];
   const questionStates: QuestionState[] = v1States.map((qs) => ({
     questionId: qs.questionId,
@@ -37,6 +46,39 @@ function migrateV1toV2(raw: Record<string, unknown>): AssessmentState {
   };
 }
 
+// ─── V2 → V3 Migration (classification value rename) ────────────────────────
+
+function migrateV2toV3(raw: Record<string, unknown>): AssessmentState {
+  const v2States = (raw.questionStates as Array<Record<string, unknown>>) ?? [];
+  const questionStates: QuestionState[] = v2States.map((qs) => {
+    const oldClassification = qs.classification as string | null;
+    const newClassification = oldClassification && V2_TO_V3_CLASSIFICATION[oldClassification]
+      ? V2_TO_V3_CLASSIFICATION[oldClassification] as QuestionState['classification']
+      : oldClassification as QuestionState['classification'];
+    return {
+      questionId: qs.questionId as string,
+      classification: newClassification,
+      importance: qs.importance as number | null,
+      notes: (qs.notes as string) ?? '',
+      rating: qs.rating as number | null,
+    };
+  });
+
+  return {
+    version: CURRENT_VERSION,
+    createdAt: (raw.createdAt as string) ?? new Date().toISOString(),
+    lastSavedAt: (raw.lastSavedAt as string) ?? new Date().toISOString(),
+    challengesText: (raw.challengesText as string) ?? '',
+    questionStates,
+    weightsConfig: (raw.weightsConfig as AssessmentState['weightsConfig']) ?? {
+      mode: 'equal',
+      categoryWeights: [],
+    },
+    finalSnapshot: null,
+    dirtyAfterFinal: false,
+  };
+}
+
 // ─── Load / Save ─────────────────────────────────────────────────────────────
 
 export function loadState(): AssessmentState | null {
@@ -46,9 +88,14 @@ export function loadState(): AssessmentState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
 
-    // Migrate v1 → v2
+    // Migrate old versions
     if (!parsed.version || parsed.version < CURRENT_VERSION) {
-      const migrated = migrateV1toV2(parsed);
+      let migrated: AssessmentState;
+      if (!parsed.version || parsed.version < 2) {
+        migrated = migrateV1(parsed);
+      } else {
+        migrated = migrateV2toV3(parsed);
+      }
       saveState(migrated);
       return migrated;
     }
@@ -80,8 +127,11 @@ export function importStateJSON(json: string): AssessmentState {
     throw new Error('Invalid assessment file format');
   }
   // Migrate if needed
-  if (!parsed.version || parsed.version < CURRENT_VERSION) {
-    return migrateV1toV2(parsed);
+  if (!parsed.version || parsed.version < 2) {
+    return migrateV1(parsed);
+  }
+  if (parsed.version < CURRENT_VERSION) {
+    return migrateV2toV3(parsed);
   }
   return parsed as AssessmentState;
 }

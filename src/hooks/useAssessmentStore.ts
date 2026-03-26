@@ -83,7 +83,7 @@ export function useAssessmentStore() {
       updateState((prev) => {
         const questionStates = prev.questionStates.map((qs) => {
           if (qs.questionId !== questionId) return qs;
-          const newImportance = classification === 'not-an-issue' ? 0 : qs.importance;
+          const newImportance = classification === 'in-good-shape' ? 0 : qs.importance;
           const combined = classification
             ? SEVERITY_MAP[classification] * (newImportance ?? 0)
             : null;

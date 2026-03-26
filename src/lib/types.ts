@@ -10,7 +10,7 @@ export type Category =
   | 'Employee Relations and Compliance'
   | 'HR Operations and Workforce Analytics';
 
-export type Classification = 'hygienic' | 'optimization' | 'both' | 'not-an-issue';
+export type Classification = 'critical-gap' | 'needs-work' | 'room-to-improve' | 'in-good-shape';
 
 export interface CanonicalQuestion {
   id: string;
@@ -23,7 +23,7 @@ export interface CanonicalQuestion {
 export interface QuestionState {
   questionId: string;
   classification: Classification | null;
-  importance: number | null; // 1–5 or null; auto-zeroed when classification is 'not-an-issue'
+  importance: number | null; // 1–5 or null; auto-zeroed when classification is 'in-good-shape'
   notes: string;
   // Derived convenience field (severity × importance), kept in sync by scoring
   rating: number | null; // legacy compat: derived combined score 0–5
@@ -100,8 +100,8 @@ export type Screen = 'welcome' | 'challenges' | 'splash' | 'wizard' | 'review' |
 // ─── Severity Mapping ──────────────────────────────────────────────────────
 
 export const SEVERITY_MAP: Record<Classification, number> = {
-  'not-an-issue': 0,
-  'optimization': 0.5,
-  'hygienic': 0.8,
-  'both': 1.0,
+  'in-good-shape': 0,
+  'room-to-improve': 0.5,
+  'needs-work': 0.8,
+  'critical-gap': 1.0,
 };

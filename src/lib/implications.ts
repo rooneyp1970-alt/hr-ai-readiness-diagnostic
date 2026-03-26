@@ -54,8 +54,8 @@ function getCategoryStrengths(category: Category, state: AssessmentState): strin
 
   for (const q of questions) {
     const qs = state.questionStates.find((s) => s.questionId === q.id);
-    if (qs?.classification === 'not-an-issue') {
-      strengths.push(`${q.text.replace(/^How /, '').replace(/\?$/, '')} (Not an issue)`);
+    if (qs?.classification === 'in-good-shape') {
+      strengths.push(`${q.text.replace(/^How /, '').replace(/\?$/, '')} (In good shape)`);
     } else if (qs?.classification && qs.importance !== null && qs.importance !== undefined) {
       const score = getQuestionCombinedScore(qs.classification, qs.importance);
       if (score <= 1) {
@@ -73,7 +73,7 @@ function getCategoryBarriers(category: Category, state: AssessmentState): string
 
   for (const q of questions) {
     const qs = state.questionStates.find((s) => s.questionId === q.id);
-    if (qs?.classification && qs.classification !== 'not-an-issue' && qs.importance !== null && qs.importance !== undefined) {
+    if (qs?.classification && qs.classification !== 'in-good-shape' && qs.importance !== null && qs.importance !== undefined) {
       const score = getQuestionCombinedScore(qs.classification, qs.importance);
       if (score >= 3) {
         barriers.push(`${q.text.replace(/^How /, '').replace(/\?$/, '')} (${CLASSIFICATION_LABELS[qs.classification]}, Importance: ${qs.importance})`);

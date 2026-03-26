@@ -278,17 +278,17 @@ export const RATING_DESCRIPTIONS: Record<number, string> = {
 // ─── Classification Labels ─────────────────────────────────────────────────
 
 export const CLASSIFICATION_LABELS: Record<Classification, string> = {
-  'hygienic': 'Hygienic',
-  'optimization': 'Optimization',
-  'both': 'Both',
-  'not-an-issue': 'Not an Issue',
+  'critical-gap': 'Critical Gap',
+  'needs-work': 'Needs Work',
+  'room-to-improve': 'Room to Improve',
+  'in-good-shape': 'In Good Shape',
 };
 
 export const CLASSIFICATION_DESCRIPTIONS: Record<Classification, string> = {
-  'hygienic': 'This is a foundational requirement — a gap here creates real risk, compliance exposure, or operational failure.',
-  'optimization': 'This is an efficiency or quality opportunity — improving here would create value but the current state is manageable.',
-  'both': 'This is both a foundational gap and an optimization opportunity.',
-  'not-an-issue': 'This area is already well handled or not relevant to your organization.',
+  'critical-gap': 'This capability is largely absent or broken — it needs to be in place and it isn\'t.',
+  'needs-work': 'We\'ve started but we\'re not where we need to be — inconsistent, undocumented, or unreliable.',
+  'room-to-improve': 'This is working but could be better or more efficient — there\'s value in improving it.',
+  'in-good-shape': 'This area is well handled or not relevant to your organization.',
 };
 
 export const IMPORTANCE_LABELS: Record<number, string> = {

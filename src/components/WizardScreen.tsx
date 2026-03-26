@@ -30,10 +30,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const CLASSIFICATION_CARDS: { value: Classification; icon: string; color: string; selectedColor: string }[] = [
-  { value: 'hygienic', icon: '🛡️', color: 'border-gray-200 bg-white hover:border-red-300 hover:bg-red-50/30', selectedColor: 'border-red-400 bg-red-50 ring-2 ring-red-200' },
-  { value: 'optimization', icon: '🚀', color: 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/30', selectedColor: 'border-blue-400 bg-blue-50 ring-2 ring-blue-200' },
-  { value: 'both', icon: '⚡', color: 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/30', selectedColor: 'border-purple-400 bg-purple-50 ring-2 ring-purple-200' },
-  { value: 'not-an-issue', icon: '✓', color: 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50', selectedColor: 'border-gray-400 bg-gray-100 ring-2 ring-gray-200' },
+  { value: 'critical-gap', icon: '🚨', color: 'border-gray-200 bg-white hover:border-red-300 hover:bg-red-50/30', selectedColor: 'border-red-400 bg-red-50 ring-2 ring-red-200' },
+  { value: 'needs-work', icon: '🔧', color: 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/30', selectedColor: 'border-amber-400 bg-amber-50 ring-2 ring-amber-200' },
+  { value: 'room-to-improve', icon: '📈', color: 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/30', selectedColor: 'border-blue-400 bg-blue-50 ring-2 ring-blue-200' },
+  { value: 'in-good-shape', icon: '✓', color: 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30', selectedColor: 'border-emerald-400 bg-emerald-50 ring-2 ring-emerald-200' },
 ];
 
 export default function WizardScreen({
@@ -55,7 +55,7 @@ export default function WizardScreen({
   const currentClassification = questionState?.classification ?? null;
   const currentImportance = questionState?.importance ?? null;
   const currentNotes = questionState?.notes ?? '';
-  const isNotAnIssue = currentClassification === 'not-an-issue';
+  const isInGoodShape = currentClassification === 'in-good-shape';
 
   const completionProgress = Math.round((answeredCount / CANONICAL_QUESTIONS.length) * 100);
 
@@ -178,10 +178,10 @@ export default function WizardScreen({
           {/* Part 1: Classification (2x2 Grid) */}
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-shore-navy mb-1">
-              Part 1: How would you classify this area?
+              Part 1: How prepared is your organization in this area?
             </h3>
             <p className="text-xs text-gray-500 mb-3">
-              Is this a foundational gap, an optimization opportunity, both, or not an issue?
+              Select the option that best describes your current state.
             </p>
             <div className="grid grid-cols-2 gap-3">
               {CLASSIFICATION_CARDS.map((card) => {
@@ -211,12 +211,12 @@ export default function WizardScreen({
           </div>
 
           {/* Part 2: Importance (1-5 scale) */}
-          <div className={`mb-6 transition-opacity ${isNotAnIssue ? 'opacity-40 pointer-events-none' : ''}`}>
+          <div className={`mb-6 transition-opacity ${isInGoodShape ? 'opacity-40 pointer-events-none' : ''}`}>
             <h3 className="text-sm font-semibold text-shore-navy mb-1">
               Part 2: How important is this to address?
             </h3>
             <p className="text-xs text-gray-500 mb-3">
-              {isNotAnIssue ? 'Auto-set to 0 because this is not an issue.' : 'Rate the relative importance of addressing this area.'}
+              {isInGoodShape ? 'Auto-set to 0 because this is not an issue.' : 'Rate the relative importance of addressing this area.'}
             </p>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((level) => {
@@ -226,7 +226,7 @@ export default function WizardScreen({
                     key={level}
                     type="button"
                     onClick={() => handleImportance(level)}
-                    disabled={isNotAnIssue}
+                    disabled={isInGoodShape}
                     className={`flex-1 rounded-xl border-2 py-3 text-center transition-all ${
                       isSelected
                         ? 'border-shore-navy bg-shore-navy text-white'
@@ -257,8 +257,8 @@ export default function WizardScreen({
             </button>
             {showReference && (
               <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 space-y-2">
-                <p className="text-xs font-semibold text-shore-navy">Classification Reference:</p>
-                {(['hygienic', 'optimization', 'both', 'not-an-issue'] as Classification[]).map((c) => (
+                <p className="text-xs font-semibold text-shore-navy">Preparedness Reference:</p>
+                {(['critical-gap', 'needs-work', 'room-to-improve', 'in-good-shape'] as Classification[]).map((c) => (
                   <div key={c} className="text-xs text-gray-600">
                     <span className="font-medium text-gray-700">{CLASSIFICATION_LABELS[c]}:</span>{' '}
                     {CLASSIFICATION_DESCRIPTIONS[c]}

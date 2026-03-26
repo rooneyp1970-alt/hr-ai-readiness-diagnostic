@@ -87,7 +87,7 @@ export default function ReviewScreen({
                             ? 'bg-red-50 text-red-600'
                             : combined !== null && combined >= 1.5
                               ? 'bg-amber-50 text-amber-700'
-                              : classification === 'not-an-issue'
+                              : classification === 'in-good-shape'
                                 ? 'bg-gray-100 text-gray-400'
                                 : 'bg-shore-teal/15 text-shore-teal'
                           : 'bg-gray-100 text-gray-400'
@@ -100,7 +100,7 @@ export default function ReviewScreen({
                           {isAnswered ? (
                             <span className="text-xs text-shore-slate">
                               {CLASSIFICATION_LABELS[classification!]}
-                              {classification !== 'not-an-issue' && importance ? ` · Importance: ${importance}` : ''}
+                              {classification !== 'in-good-shape' && importance ? ` · Importance: ${importance}` : ''}
                             </span>
                           ) : (
                             <span className="text-xs text-gray-400">Not answered</span>

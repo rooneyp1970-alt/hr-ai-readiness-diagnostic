@@ -18,7 +18,7 @@ export function getQuestionCombinedScore(
   classification: Classification | null,
   importance: number | null
 ): number {
-  if (!classification || classification === 'not-an-issue') return 0;
+  if (!classification || classification === 'in-good-shape') return 0;
   const severity = SEVERITY_MAP[classification];
   const imp = importance ?? 0;
   return severity * imp; // 0–5 range
@@ -241,7 +241,7 @@ export function computeFinalSnapshot(state: AssessmentState): FinalSnapshot {
 export function createInitialState(): AssessmentState {
   const now = new Date().toISOString();
   return {
-    version: 2,
+    version: 3,
     createdAt: now,
     lastSavedAt: now,
     challengesText: '',
